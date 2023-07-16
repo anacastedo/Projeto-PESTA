@@ -5,31 +5,7 @@ include('code/common/outPrintMTN.js');
 
 
 /****************************************Encapsulted Functions****************************************/
-function obtainIsolatedPS (dcVoltPs, acVoltPs) {
-	// Search for Isolated Voltage Supplies
-	// For each Volt PS, if has in its terminals 2 Real Nodes, it is Isolated
-	var isolatedPS = new Array();
-	// DC PS
-	for(let i=0; i<dcVoltPs.length; i++) {
-		let nodeNoP = dcVoltPs[i].noP.search('_net');
-		let nodeNoN = dcVoltPs[i].noN.search('_net');
-		if( (nodeNoP < 0) && (nodeNoN < 0) ) {
-			isolatedPS.push( { id: dcVoltPs[i].id, ref: dcVoltPs[i].ref, noP: dcVoltPs[i].noP, noN: dcVoltPs[i].noN } );
-		}
-	}
-	// AC PS
-	for(let i=0; i<acVoltPs.length; i++) {
-		let nodeNoP = acVoltPs[i].noP.search('_net');
-		let nodeNoN = acVoltPs[i].noN.search('_net');
-		if( (nodeNoP < 0) && (nodeNoN < 0) ) {
-			isolatedPS.push( { id: acVoltPs[i].id, ref: acVoltPs[i].ref, noP: acVoltPs[i].noP, noN: acVoltPs[i].noN } );
-		}
-	}
 
-	var isolatedPS = JSON.parse(JSON.stringify(isolatedPS));
-
-	return isolatedPS
-}
 
 /**
  * Count Nodes By Type (0 = Real, 1 - Virtual)
@@ -55,6 +31,7 @@ function loadFileAsTextMTN(data) {
 	nodes = jsonFile.nodes;
 	components = jsonFile.components;
 	simInfo = jsonFile.analysisObj;
+	isolatedPS = jsonFile.isolatedPS;
 
 
 	// Math namespaces/prototypes
@@ -80,35 +57,124 @@ function loadFileAsTextMTN(data) {
 	var connections = new Array();
 
 
+// //Copy data to ameters object
+// 	let ammetersTemp=new Array();
+// 	for(let i=0; i<components.ammeters.length; i++){
+// 		let ammeterNew=new ammeter(components.ammeters[i].id, components.ammeters[i].ref, components.ammeters[i].noP, components.ammeters[i].noN, components.ammeters[i].type, components.ammeters[i].value, components.ammeters[i].unitMult, components.ammeters[i].intRes, components.ammeters[i].intResMult, components.ammeters[i].current, components.ammeters[i].posX, components.ammeters[i].posY, components.ammeters[i].globalNoP, components.ammeters[i].globalNoN);
+// 		ammetersTemp.push(ammeterNew);
+// 	}
+	let dcAmpNTemp=new Array();
+	let dcVoltNTemp=new Array();
+for(let j=0; j<nodes.length; j++){
+	for(let i=0; i<nodes[j].branches.length; i++){
+		dcVoltNTemp=[];
+		dcAmpNTemp=[];
+		let currentsNTemp=new Array();
+		let ammetersNTemp=new Array();
+		let resistorsBTemp= new Array();
+		let currentNNew=new current(nodes[j].branches[i].currentData.id, nodes[j].branches[i].currentData.ref, nodes[j].branches[i].currentData.noP, nodes[j].branches[i].currentData.noN, nodes[j].branches[i].currentData.type, null, nodes[j].branches[i].currentData.voltage, nodes[j].branches[i].currentData.value, nodes[j].branches[i].currentData.ohmEquation, nodes[j].branches[i].currentData.fixed, nodes[j].branches[i].currentData.nodeEquations);
+		currentsNTemp.push(currentNNew);
+		nodes[j].branches[i].currentData=currentsNTemp[0];
+		if(nodes[j].branches[i].ammeters!==undefined){
+		let ammeterNNew=new ammeter(nodes[j].branches[i].ammeters.id, nodes[j].branches[i].ammeters.ref, nodes[j].branches[i].ammeters.noP, nodes[j].branches[i].ammeters.noN, nodes[j].branches[i].ammeters.type, nodes[j].branches[i].ammeters.intRes, nodes[j].branches[i].ammeters.intResMult, nodes[j].branches[i].ammeters.posX, nodes[j].branches[i].ammeters.posY);
+		ammetersNTemp.push(ammeterNNew);
+		nodes[j].branches[i].ammeters=ammetersNTemp;}
+		if(nodes[j].branches[i].resistors.length>0){
+		for(let k=0; k<nodes[j].branches[i].resistors.length; k++){
+		let resistorBNew= new resistor(nodes[j].branches[i].resistors[k].id, nodes[j].branches[i].resistors[k].ref, nodes[j].branches[i].resistors[k].noP, nodes[j].branches[i].resistors[k].noN, nodes[j].branches[i].resistors[k].type, nodes[j].branches[i].resistors[k].value, nodes[j].branches[i].resistors[k].unitMult, nodes[j].branches[i].resistors[k].temp, nodes[j].branches[i].resistors[k].posX, nodes[j].branches[i].resistors[k].posY);
+		resistorsBTemp.push(resistorBNew);}
+		nodes[j].branches[i].resistors=resistorsBTemp;}
+		if(nodes[j].branches[i].dcAmpPwSupplies.length>0){
+		for(let k=0; k<nodes[j].branches[i].dcAmpPwSupplies.length; k++){
 
+			let dcAmpPwSuppliesNTemp=new dcCurrPower(nodes[j].branches[i].dcAmpPwSupplies[k].id, nodes[j].branches[i].dcAmpPwSupplies[k].ref,nodes[j].branches[i].dcAmpPwSupplies[k].noP, nodes[j].branches[i].dcAmpPwSupplies[k].noN, nodes[j].branches[i].dcAmpPwSupplies[k].type, nodes[j].branches[i].dcAmpPwSupplies[k].value, nodes[j].branches[i].dcAmpPwSupplies[k].unitMult, nodes[j].branches[i].dcAmpPwSupplies[k].intRes, nodes[j].branches[i].dcAmpPwSupplies[k].intResMult, nodes[j].branches[i].dcAmpPwSupplies[k].current, nodes[j].branches[i].dcAmpPwSupplies[k].posX, nodes[j].branches[i].dcAmpPwSupplies[k].posY, nodes[j].branches[i].dcAmpPwSupplies[k].globalNoP, nodes[j].branches[i].dcAmpPwSupplies[k].globalNoN);
+			dcAmpNTemp.push(dcAmpPwSuppliesNTemp)}
+		nodes[j].branches[i].dcAmpPwSupplies=dcAmpNTemp;}
+		if(nodes[j].branches[i].dcVoltPwSupplies.length>0){
+		for(let k=0; k<nodes[j].branches[i].dcVoltPwSupplies.length; k++){
+
+			let dcVoltPwSuppliesNTemp=new dcVoltPower(nodes[j].branches[i].dcVoltPwSupplies[k].id, nodes[j].branches[i].dcVoltPwSupplies[k].ref,nodes[j].branches[i].dcVoltPwSupplies[k].noP, nodes[j].branches[i].dcVoltPwSupplies[k].noN, nodes[j].branches[i].dcVoltPwSupplies[k].type, nodes[j].branches[i].dcVoltPwSupplies[k].value, nodes[j].branches[i].dcVoltPwSupplies[k].unitMult, nodes[j].branches[i].dcVoltPwSupplies[k].intRes, nodes[j].branches[i].dcVoltPwSupplies[k].intResMult, nodes[j].branches[i].dcVoltPwSupplies[k].voltage, nodes[j].branches[i].dcVoltPwSupplies[k].posX, nodes[j].branches[i].dcVoltPwSupplies[k].posY);
+			dcVoltNTemp.push(dcVoltPwSuppliesNTemp)}
+		nodes[j].branches[i].dcVoltPwSupplies=dcVoltNTemp;}
+	}}
+
+
+
+
+for(let i=0; i<branches.length; i++){
+	let currentsTemp=new Array();
+		let currentNew=new current(branches[i].currentData.id, branches[i].currentData.ref, branches[i].currentData.noP, branches[i].currentData.noN, branches[i].currentData.type, null, branches[i].currentData.voltage, branches[i].currentData.value, branches[i].currentData.ohmEquation, branches[i].currentData.fixed, branches[i].currentData.nodeEquations);
+		currentsTemp.push(currentNew);
+		branches[i].currentData=currentsTemp[0];
+
+	}
+
+	for(let i=0; i<branches.length; i++){
+		if(branches[i].ammeters){
+		let ammetersTemp=new Array();
+let ammeterNew=new ammeter(branches[i].ammeters.id, branches[i].ammeters.ref, branches[i].ammeters.noP, branches[i].ammeters.noN, branches[i].ammeters.type, branches[i].ammeters.intRes, branches[i].ammeters.intResMult, branches[i].ammeters.posX, branches[i].ammeters.posY);
+ammetersTemp.push(ammeterNew);
+branches[i].ammeters=ammetersTemp;}
+	}
+
+	//Copy data to resistor object
+	for(let i=0; i<branches.length; i++){
+		if(branches[i].resistors.length>0){
+	let resistorsBTemp= new Array();
+	for(let j=0; j<branches[i].resistors.length; j++){
+		let resistorBNew= new resistor(branches[i].resistors[j].id, branches[i].resistors[j].ref, branches[i].resistors[j].noP, branches[i].resistors[j].noN, branches[i].resistors[j].type, branches[i].resistors[j].value, branches[i].resistors[j].unitMult, branches[i].resistors[j].temp, branches[i].resistors[j].posX, branches[i].resistors[j].posY);
+		resistorsBTemp.push(resistorBNew);
+	}
+	branches[i].resistors=resistorsBTemp;}}
 
 
 //Copy data to current object
 	let currentsTemp= new Array();
 	for(let i=0; i<currents.length; i++){
-		let currentNew= new current(currents[i].id, currents[i].ref, currents[i].noP, currents[i].noN, currents[i].type, branches[i].equivImpedance, branches[i].equivVoltPs, currents[i].value, currents[i].equation, currents[i].fixed, currents[i].nodeEquations);
+		let currentNew= new current(currents[i].id, currents[i].ref, currents[i].noP, currents[i].noN, currents[i].type, null, null, currents[i].value, currents[i].equation, currents[i].fixed, currents[i].nodeEquations);
 		currentsTemp.push(currentNew);
 
 	}
 	currents=currentsTemp;
 
+	let dcAmpTemp=new Array();
+	for(let i=0; i<branches.length; i++){
+		dcAmpTemp=[];
+		if(branches[i].dcAmpPwSupplies.length>0){
+		for(let j=0; j<branches[i].dcAmpPwSupplies.length; j++){
+			let dcAmpPwSuppliesTemp=new dcCurrPower(branches[i].dcAmpPwSupplies[j].id, branches[i].dcAmpPwSupplies[j].ref, branches[i].dcAmpPwSupplies[j].noP, branches[i].dcAmpPwSupplies[j].noN, branches[i].dcAmpPwSupplies[j].type, branches[i].dcAmpPwSupplies[j].value, branches[i].dcAmpPwSupplies[j].unitMult, branches[i].dcAmpPwSupplies[j].intRes, branches[i].dcAmpPwSupplies[j].intResMult, branches[i].dcAmpPwSupplies[j].current, branches[i].dcAmpPwSupplies[j].posX, branches[i].dcAmpPwSupplies[j].posY, branches[i].dcAmpPwSupplies[j].globalNoP, branches[i].dcAmpPwSupplies[j].globalNoN);
+			dcAmpTemp.push(dcAmpPwSuppliesTemp)}
+		branches[i].dcAmpPwSupplies=dcAmpTemp;}}
+
+	let dcVoltTemp=new Array();
+	for(let i=0; i<branches.length; i++){
+		if(branches[i].dcVoltPwSupplies.length>0){
+		dcVoltTemp=[];
+		for(let j=0; j<branches[i].dcVoltPwSupplies.length; j++){
+
+			let dcVoltPwSuppliesTemp=new dcVoltPower(branches[i].dcVoltPwSupplies[j].id, branches[i].dcVoltPwSupplies[j].ref, branches[i].dcVoltPwSupplies[j].noP, branches[i].dcVoltPwSupplies[j].noN, branches[i].dcVoltPwSupplies[j].type, branches[i].dcVoltPwSupplies[j].value, branches[i].dcVoltPwSupplies[j].unitMult, branches[i].dcVoltPwSupplies[j].intRes, branches[i].dcVoltPwSupplies[j].intResMult, branches[i].dcVoltPwSupplies[j].voltage, branches[i].dcVoltPwSupplies[j].posX, branches[i].dcVoltPwSupplies[j].posY);
+			dcVoltTemp.push(dcVoltPwSuppliesTemp);}
+		branches[i].dcVoltPwSupplies=dcVoltTemp;}}
+
 	//Copy data to branch object
 	let branchesTemp=new Array();
 	for(let i=0; i<branches.length; i++){
 		let branchNew=new branch(branches[i].id, branches[i].ref, branches[i].startNode,
-			branches[i].endNode,  branches[i].currentId,  branches[i].dcVoltPs,
-			branches[i].acVoltPs,  branches[i].dcAmpsPs,  branches[i].acAmpsPs,
+			branches[i].endNode,  branches[i].currentId,  branches[i].dcVoltPwSupplies,
+			branches[i].acVoltPwSupplies,  branches[i].dcAmpPwSupplies,  branches[i].acAmpPwSupplies,
 			branches[i].resistors,  branches[i].coils,  branches[i].capacitors,
-			branches[i].amperemeter,  branches[i].equivImpedance,  branches[i].equivVoltPs,
-			branches[i].endVoltPsEndNodes,  currents[i] )
+			branches[i].ammeters,  branches[i].equivImpedance,  branches[i].equivVoltPs,
+			branches[i].endVoltPsEndNodes,  branches[i].currentData )
 		branchesTemp.push(branchNew);}
 	branches=branchesTemp;
+
+
 
 	//Copy data to node object
 	let nodesTemp= new Array();
 	for(let i=0; i<nodes.length; i++){
 		let branchesNodeTemp=new Array();
-		for(j=0;j<nodes[i].branches.length;j++){
+		for(let j=0;j<nodes[i].branches.length;j++){
 			branches.forEach(element=>{if(element.id===nodes[i].branches[j].id){branchesNodeTemp.push(element)}});}
 		let nodeNew=new node(nodes[i].id, nodes[i].ref, branchesNodeTemp, nodes[i].type, nodes[i].voltage);
 		nodesTemp.push(nodeNew);
@@ -141,7 +207,7 @@ function loadFileAsTextMTN(data) {
 
 	//Copy data to dcVoltPower object
 	let dcVoltPsTemp=new Array();
-	for(i=0; i<dcVoltPs.length; i++){
+	for(let i=0; i<dcVoltPs.length; i++){
 		let dcVoltPsNew = new dcVoltPower(dcVoltPs[i].id, dcVoltPs[i].ref, dcVoltPs[i].noP, dcVoltPs[i].noN, dcVoltPs[i].type, dcVoltPs[i].value, dcVoltPs[i].unitMult, dcVoltPs[i].intRes, dcVoltPs[i].intResMult, dcVoltPs[i].voltage,  dcVoltPs[i].posX,  dcVoltPs[i].posY);
 		dcVoltPsTemp.push(dcVoltPsNew);
 	}
@@ -149,7 +215,7 @@ function loadFileAsTextMTN(data) {
 
 //Copy data to acVoltPower object
 	let acVoltPsTemp=new Array();
-	for(i=0; i<acVoltPs.length; i++){
+	for(let i=0; i<acVoltPs.length; i++){
 		let acVoltPsNew=new acVoltPower(acVoltPs[i].id, acVoltPs[i].ref, acVoltPs[i].noP, acVoltPs[i].noN,acVoltPs[i].type, acVoltPs[i].value, acVoltPs[i].unitMult, acVoltPs[i].intRes, acVoltPs[i].intResMult,acVoltPs[i].freq, acVoltPs[i].freqMult,acVoltPs[i].phase,acVoltPs[i].theta, acVoltPs[i].voltage, acVoltPs[i].posX, acVoltPs[i].posY);
 		acVoltPsTemp.push(acVoltPsNew);
 	}
@@ -159,7 +225,7 @@ function loadFileAsTextMTN(data) {
 //Copy data to dcCurrPower object
 	let dcAmpsPsTemp=new Array();
 	for(let i=0; i<dcAmpsPs.length;i++){
-		let dcAmpsPsNew=new dcCurrPower(dcAmpsPs[i].id, dcAmpsPs[i].ref, dcAmpsPs[i].noP, dcAmpsPs[i].noN, dcAmpsPs[i].type, dcAmpsPs[i].value, dcAmpsPs[i].unitMult, dcAmpsPs[i].intRes, dcAmpsPs[i].intResMult, dcAmpsPs[i].current, dcAmpsPs[i].posX, dcAmpsPs[i].posY, dcAmpsPs[i].globalNoN, dcAmpsPs[i].globalNoN);
+		let dcAmpsPsNew=new dcCurrPower(dcAmpsPs[i].id, dcAmpsPs[i].ref, dcAmpsPs[i].noP, dcAmpsPs[i].noN, dcAmpsPs[i].type, dcAmpsPs[i].value, dcAmpsPs[i].unitMult, dcAmpsPs[i].intRes, dcAmpsPs[i].intResMult, dcAmpsPs[i].current, dcAmpsPs[i].posX, dcAmpsPs[i].posY, dcAmpsPs[i].globalNoP, dcAmpsPs[i].globalNoN);
 		dcAmpsPsTemp.push(dcAmpsPsNew);
 	}
 	dcAmpsPs=dcAmpsPsTemp;
@@ -174,6 +240,7 @@ function loadFileAsTextMTN(data) {
 	acAmpsPs=acAmpsPsTemp;
 
 
+
 	// Validate submitted Netlist File
 	var netlistTxt = validateNetlist(fileContents[1]);
 	if(fileContents[2])
@@ -185,9 +252,6 @@ function loadFileAsTextMTN(data) {
 	console.debug('dcVoltPs', dcVoltPs)
 	console.debug('acVoltPs', acVoltPs)
 
-	var isolatedPS=obtainIsolatedPS(dcVoltPs, acVoltPs)
-
-	console.debug('isolatedPS', isolatedPS)
 
 	// Search for SuperNodes
 	// Grounded
@@ -751,11 +815,16 @@ function loadFileAsTextMTN(data) {
 	branches.forEach(function(branch, ix, obj){
 		branch.setCurrentOhmsLaw();
 	});
+	let size=currents.length;
+currents=[];
+for(let i=0; i<size; i++) {
+	currents.push(branches[i].currentData)
+};
 
 	// Set ohmEquation or just the current value (if the branch has a current power supply)
 	currents.forEach(function(arrElem){
-		arrElem.setEquation();
-	});
+		arrElem.setEquation()});
+
 	// Produce final knl equations (for all equations)
 	knlEquationsReg.forEach(function(knlEq, index, obj) {
 		let arrNode = knlEq.node;
@@ -774,7 +843,7 @@ function loadFileAsTextMTN(data) {
 			let itDataPlainEq = iterCurrData.fourth;
 			let itDataObjEq = iterCurrData.fifth;
 			let itDataNodeRef = nodes[nodeIndex].ref;
-			currents[currIndex].pushNodeEquation({ nodeRef: itDataNodeRef, fullPlainEq: itDataFullPlainEq, plainEq: itDataPlainEq, eqObj: itDataObjEq });
+			currents[currIndex].pushNodeEquation({ nodeRef: itDataNodeRef, fullPlainEq: itDataFullPlainEq, plainEq: itDataPlainEq, equatObj: itDataObjEq });
 
 		});
 	});
@@ -808,7 +877,7 @@ function loadFileAsTextMTN(data) {
 				thisEq = thisEq.subtract(smallEq);
 			});
 			thisEq = new Equation(thisEq, 0);
-			knlObj[knlIndex] = { node: knlNode, currents: null, plainEquation: iterEquation, eqObj: thisEq };
+			knlObj[knlIndex] = { node: knlNode, currents: null, plainEquation: iterEquation, equatObj: thisEq };
 		}
 		else {
 			let end = false;
@@ -917,7 +986,7 @@ function loadFileAsTextMTN(data) {
 								currObjArr.push(currObj);
 							}
 						});
-						knlObj[knlIndex] = { node: knlNode, currents: currObjArr, plainEquation: expr.toString(), eqObj: expr }
+						knlObj[knlIndex] = { node: knlNode, currents: currObjArr, plainEquation: expr.toString(), equatObj: expr }
 						mcState--;
 						break;
 					}
@@ -945,7 +1014,7 @@ function loadFileAsTextMTN(data) {
 		let newterm = '';
 		let ohmEq = '';
 		let ohmEqVl = '';
-		knlEq.eqObj.lhs.terms.forEach(function(termElem, termIndex, termObj) {
+		knlEq.equatObj.lhs.terms.forEach(function(termElem, termIndex, termObj) {
 			let signal = termElem.coefficients[0].numer;
 			let variable = termElem.variables[0].variable;
 			currIndex = currents.findIndex(item => item.ref === variable);
@@ -1608,25 +1677,25 @@ function loadFileAsTextMTN(data) {
 					let isValid = true;
 					let neededCurrents = new Array();
 					let neededCurrValues = new Array();
-					for(let j = 0; j< nodeEq.eqObj.minusCurr.length; j++){
+					for(let j = 0; j< nodeEq.equatObj.minusCurr.length; j++){
 						// Check if each current already has value
-						let currIndex = resultsCurr.findIndex(curr => curr.ref === nodeEq.eqObj.minusCurr[j]);
-						if(nodeEq.eqObj.minusCurr[j] !== resultsCurr[i].ref){
-							neededCurrents.push(nodeEq.eqObj.minusCurr[j]);
+						let currIndex = resultsCurr.findIndex(curr => curr.ref === nodeEq.equatObj.minusCurr[j]);
+						if(nodeEq.equatObj.minusCurr[j] !== resultsCurr[i].ref){
+							neededCurrents.push(nodeEq.equatObj.minusCurr[j]);
 							neededCurrValues.push(resultsCurr[currIndex].value);
 						}
-						if(resultsCurr[currIndex].value == null && nodeEq.eqObj.minusCurr[j] !== resultsCurr[i].ref){
+						if(resultsCurr[currIndex].value == null && nodeEq.equatObj.minusCurr[j] !== resultsCurr[i].ref){
 							isValid = false;
 							break;
 						}
 					}
-					for(let j = 0; j< nodeEq.eqObj.plusCurr.length; j++){
-						let currIndex = resultsCurr.findIndex(curr => curr.ref === nodeEq.eqObj.plusCurr[j]);
-						if(nodeEq.eqObj.plusCurr[j] !== resultsCurr[i].ref){
-							neededCurrents.push(nodeEq.eqObj.plusCurr[j]);
+					for(let j = 0; j< nodeEq.equatObj.plusCurr.length; j++){
+						let currIndex = resultsCurr.findIndex(curr => curr.ref === nodeEq.equatObj.plusCurr[j]);
+						if(nodeEq.equatObj.plusCurr[j] !== resultsCurr[i].ref){
+							neededCurrents.push(nodeEq.equatObj.plusCurr[j]);
 							neededCurrValues.push(resultsCurr[currIndex].value);
 						}
-						if(resultsCurr[currIndex].value == null && nodeEq.eqObj.plusCurr[j] !== resultsCurr[i].ref){
+						if(resultsCurr[currIndex].value == null && nodeEq.equatObj.plusCurr[j] !== resultsCurr[i].ref){
 							isValid = false;
 							break;
 						}

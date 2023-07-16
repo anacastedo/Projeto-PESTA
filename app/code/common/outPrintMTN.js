@@ -338,8 +338,8 @@ function outCurrentsKNLTex(knlCurrEquations,supernodes) {
             currents: []
         };
 
-        for (let k = 0; k < knlCurrEquations[i].eqObj.lhs.terms.length; k++) {
-            let curr = knlCurrEquations[i].eqObj.lhs.terms[k];
+        for (let k = 0; k < knlCurrEquations[i].equatObj.lhs.terms.length; k++) {
+            let curr = knlCurrEquations[i].equatObj.lhs.terms[k];
             let currObj = {
                 id: curr.variables[0].variable,
                 flow: '',
@@ -1624,8 +1624,8 @@ function outCurrentsKNL(knlCurrEquations,supernodes){
             currents: []
         };
 
-        for(let k = 0; k< knlCurrEquations[i].eqObj.lhs.terms.length; k++ ){
-            let curr = knlCurrEquations[i].eqObj.lhs.terms[k];
+        for(let k = 0; k< knlCurrEquations[i].equatObj.lhs.terms.length; k++ ){
+            let curr = knlCurrEquations[i].equatObj.lhs.terms[k];
             let currObj = {
                 id: curr.variables[0].variable,
                 flow: '',

@@ -1,5 +1,5 @@
 
-
+let isolatedPS = new Array();
 /**
  * Loads the file and validates the netlist
  * @returns netlist
@@ -82,6 +82,7 @@ function importData(netlistTxt){
 		Iprob:  0,
 	};
 
+
 	// Import data to local variables
     for(var line = 0; line < netListLines.length; line++){
 		var cpData = acquireCpData(netListLines[line], netListLineCnt);
@@ -91,6 +92,9 @@ function importData(netlistTxt){
 		}
 
 		if(!cpData.first) {
+			// Remove symbols from reference
+			let removedSymbols = cpData.second.ref.replace(/\\/g, '').replace(/_/g, '').replace(/\s/g, '');
+			cpData.second.ref=removedSymbols;
 			switch (cpData.second.type) {
 				case cpRefTest("Vdc"): {
 					var newDcVoltPs = new dcVoltPower(cpData.second.id, cpData.second.ref, cpData.second.noP, cpData.second.noN, cpData.second.type, cpData.second.value, cpData.second.unitMult, cpData.second.intRes, cpData.second.intResMult, null, null, null);
@@ -1527,6 +1531,7 @@ function branchCurrents(){
 						if(ampsMeters[ampIndex].noN == branches[j].resistors[refIndex].noN) iProbeLocVsAmpId[i].jointNodeN = branches[j].resistors[refIndex].noN;
 						// Save ammeters data to branch
 						branches[j].ammeters = ampsMeters[ampIndex];
+						branches[j].ammeter = ampsMeters[ampIndex];
 					}
 					break;
 				}
@@ -1544,6 +1549,7 @@ function branchCurrents(){
 						if(ampsMeters[ampIndex].noN == branches[j].coils[refIndex].noN) iProbeLocVsAmpId[i].jointNodeN = branches[j].coils[refIndex].noN;
 						// Save ammeters data to branch
 						branches[j].ammeters = ampsMeters[ampIndex];
+						branches[j].ammeter = ampsMeters[ampIndex];
 					}
 					break;
 				}
@@ -1561,6 +1567,7 @@ function branchCurrents(){
 						if(ampsMeters[ampIndex].noN == branches[j].capacitors[refIndex].noN) iProbeLocVsAmpId[i].jointNodeN = branches[j].capacitors[refIndex].noN;
 						// Save ammeters data to branch
 						branches[j].ammeters = ampsMeters[ampIndex];
+						branches[j].ammeter = ampsMeters[ampIndex];
 					}
 					break;
 				}
@@ -1578,6 +1585,7 @@ function branchCurrents(){
 						if(ampsMeters[ampIndex].noN == branches[j].dcVoltPwSupplies[refIndex].noN) iProbeLocVsAmpId[i].jointNodeN = branches[j].dcVoltPwSupplies[refIndex].noN;
 						// Save ammeters data to branch
 						branches[j].ammeters = ampsMeters[ampIndex];
+						branches[j].ammeter = ampsMeters[ampIndex];
 					}
 					break;
 				}
@@ -1595,6 +1603,7 @@ function branchCurrents(){
 						if(ampsMeters[ampIndex].noN == branches[j].acVoltPwSupplies[refIndex].noN) iProbeLocVsAmpId[i].jointNodeN = branches[j].acVoltPwSupplies[refIndex].noN;
 						// Save ammeters data to branch
 						branches[j].ammeters = ampsMeters[ampIndex];
+						branches[j].ammeter = ampsMeters[ampIndex];
 					}
 					break;
 				}
@@ -1612,6 +1621,7 @@ function branchCurrents(){
 						if(ampsMeters[ampIndex].noN == branches[j].dcAmpPwSupplies[refIndex].noN) iProbeLocVsAmpId[i].jointNodeN = branches[j].dcAmpPwSupplies[refIndex].noN;
 						// Save ammeters data to branch
 						branches[j].ammeters = ampsMeters[ampIndex];
+						branches[j].ammeter = ampsMeters[ampIndex];
 					}
 					break;
 				}
@@ -1629,6 +1639,7 @@ function branchCurrents(){
 						if(ampsMeters[ampIndex].noN == branches[j].acAmpPwSupplies[refIndex].noN) iProbeLocVsAmpId[i].jointNodeN = branches[j].acAmpPwSupplies[refIndex].noN;
 						// Save ammeters data to branch
 						branches[j].ammeters = ampsMeters[ampIndex];
+						branches[j].ammeter = ampsMeters[ampIndex];
 					}
 					break;
 				}
@@ -1788,6 +1799,7 @@ function branchCurrents(){
 		let currRef = '';
 		let currNoP = branches[i].startNode;
 		let currNoN = branches[i].endNode;
+
 
 		if(!branches[i].ammeters) {
 
@@ -2025,7 +2037,33 @@ function cleanData(){
  * Agregates voltPowerSources in series
  */
 function agregatePowerSupplies(){
-
+	isolatedPS=new Array;
+	// DC PS
+	for (let i = 0; i < dcVoltPs.length; i++) {
+		let nodeNoP = dcVoltPs[i].noP.search("_net");
+		let nodeNoN = dcVoltPs[i].noN.search("_net");
+		if (nodeNoP < 0 && nodeNoN < 0) {
+			isolatedPS.push({
+				id: dcVoltPs[i].id,
+				ref: dcVoltPs[i].ref,
+				noP: dcVoltPs[i].noP,
+				noN: dcVoltPs[i].noN,
+			});
+		}
+	}
+	// AC PS
+	for (let i = 0; i < acVoltPs.length; i++) {
+		let nodeNoP = acVoltPs[i].noP.search("_net");
+		let nodeNoN = acVoltPs[i].noN.search("_net");
+		if (nodeNoP < 0 && nodeNoN < 0) {
+			isolatedPS.push({
+				id: acVoltPs[i].id,
+				ref: acVoltPs[i].ref,
+				noP: acVoltPs[i].noP,
+				noN: acVoltPs[i].noN,
+			});
+		}
+	}
 	for(let i=0; i<branches.length; i++) {
 		branches[i].setVoltPsEndNodes();
 		branches[i].setEquivVoltPs();
@@ -2060,6 +2098,7 @@ function buildJson(netlist){
 		nodes: nodes,
 		branches: branches,
 		analysisObj: analysisObj,
+		isolatedPS: isolatedPS,
 	};
 
 	let jsonStr = JSON.stringify(outputJson);
@@ -2083,20 +2122,9 @@ function common(method){
 	ampsMeters = new Array();
 	voltMeters = new Array();
 	connections = new Array();
-	// Circuit analysis global data
-	circuitAnalData = {
-		frequency:	{value: 0, mult: ''}
-	};
 	nodes = new Array();
 	branches = new branch();
 	currents = new Array();
-	// Circuit analysis counters
-	circuitAnalCnt = {
-		node: 		0,
-		branch: 	0,
-		current:	0
-	};
-	//Manage ampmeters
 	iProbeNodesLoc = new Array();
 	iProbeNodesArr = new Array();
 	iProbeLocVsAmpId = new Array();

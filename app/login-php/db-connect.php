@@ -24,4 +24,4 @@ if (mysqli_connect_errno()) {
 
 //echo "Success: A proper connection to MySQL was made! " . HTML_EOL;
 //echo "Host information: " . mysqli_get_host_info($link) . HTML_EOL;
-?>
+
